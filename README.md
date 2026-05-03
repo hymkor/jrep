@@ -28,3 +28,7 @@ JREP - Format-Preserving JSON Extractor (JSON生テキスト抽出ツール)
 > jrep .[1628].entities.user_mentions[0].indices[0] ../jegan/__twitter/tweet.js
  "3.0",
 ```
+
+## Related
+
+- [jegan](https://github.com/hymkor/jegan) — an interactive JSON editor built on the same format-preserving parser
