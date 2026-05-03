@@ -13,13 +13,32 @@ import (
 )
 
 func main1(target *types.JsonPath, name string, r io.Reader) error {
+	const OFF = 99999
+	found := false
+	defer func() {
+		if found {
+			fmt.Println()
+		}
+	}()
+
 	br := bufio.NewReader(r)
+	nest := OFF
 	for {
 		err := unjson.Unmarshal(br, func(L types.Line) error {
+			n := L.Nest()
+			if n >= nest {
+				L.Dump(os.Stdout)
+				if n == nest {
+					nest = OFF
+				}
+			}
 			if target.Equals(L.Path()) {
-				fmt.Printf("%s=%#v\n",
-					L.Path().String(),
-					types.Unwrap(L.Data()))
+				found = true
+				L.Dump(os.Stdout)
+				val := types.Unwrap(L.Data())
+				if _, ok := val.(types.Mark); ok {
+					nest = n
+				}
 			}
 			return nil
 		})
