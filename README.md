@@ -29,6 +29,14 @@ JREP - Format-Preserving JSON Extractor (JSON生テキスト抽出ツール)
  "3.0",
 ```
 
+
+## Usage of jrep:
+
++ -no-comma  
+        Suppress the trailing comma, if present.
++ -value-only  
+        Output only the value, omitting the key and surrounding syntax.
+
 ## Related
 
 - [jegan](https://github.com/hymkor/jegan) — an interactive JSON editor built on the same format-preserving parser
