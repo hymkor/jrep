@@ -34,6 +34,8 @@ JREP - Format-Preserving JSON Extractor (JSON生テキスト抽出ツール)
 
 + -no-comma  
         Suppress the trailing comma, if present.
++ -no-newline  
+        Do not append a newline after each input.
 + -value-only  
         Output only the value, omitting the key and surrounding syntax.
 
