@@ -2,7 +2,10 @@ module github.com/hymkor/jrep
 
 go 1.20
 
-require github.com/hymkor/jegan v0.6.1
+require (
+	github.com/hymkor/jegan v0.6.1
+	github.com/hymkor/struct2flag v0.0.4
+)
 
 require (
 	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect

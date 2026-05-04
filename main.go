@@ -3,16 +3,26 @@ package main
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/hymkor/struct2flag"
+
 	"github.com/hymkor/jegan/types"
 	"github.com/hymkor/jegan/unjson"
 )
 
-func main1(target *types.JsonPath, name string, r io.Reader) error {
+type Application struct {
+	ValueOnly bool `flag:"value-only,Output only the value, omitting the key and surrounding syntax."`
+	NoComma   bool `flag:"no-comma,Suppress the trailing comma, if present."`
+
+	target *types.JsonPath
+}
+
+func (app *Application) Process(name string, r io.Reader) error {
 	const OFF = 99999
 	found := false
 	defer func() {
@@ -26,15 +36,32 @@ func main1(target *types.JsonPath, name string, r io.Reader) error {
 	for {
 		err := unjson.Unmarshal(br, func(L types.Line) error {
 			n := L.Nest()
-			if n >= nest {
-				L.Dump(os.Stdout)
-				if n == nest {
-					nest = OFF
+			if n == nest {
+				if app.NoComma {
+					L.DumpWithoutComma(os.Stdout)
+				} else {
+					L.Dump(os.Stdout)
 				}
-			}
-			if target.Equals(L.Path()) {
-				found = true
+				nest = OFF
+			} else if n > nest {
 				L.Dump(os.Stdout)
+			}
+			if app.target.Equals(L.Path()) {
+				found = true
+				var v interface {
+					Dump(io.Writer)
+					DumpWithoutComma(io.Writer)
+				} = L
+				if app.ValueOnly {
+					if p, ok := L.(*types.Pair); ok {
+						v = &p.Item
+					}
+				}
+				if app.NoComma {
+					v.DumpWithoutComma(os.Stdout)
+				} else {
+					v.Dump(os.Stdout)
+				}
 				val := types.Unwrap(L.Data())
 				if _, ok := val.(types.Mark); ok {
 					nest = n
@@ -51,16 +78,16 @@ func main1(target *types.JsonPath, name string, r io.Reader) error {
 	}
 }
 
-func mains(args []string) error {
+func (app *Application) Run(args []string) (err error) {
 	if len(args) < 1 {
 		return fmt.Errorf("%s JSONPATH Files...", os.Args[0])
 	}
-	target, err := types.ParseJson(args[0])
+	app.target, err = types.ParseJson(args[0])
 	if err != nil {
-		return err
+		return
 	}
 	if len(args) < 2 {
-		return main1(target, "<STDIN>", os.Stdin)
+		return app.Process("<STDIN>", os.Stdin)
 	}
 	for _, arg1 := range args[1:] {
 		filenames, err := filepath.Glob(arg1)
@@ -72,7 +99,7 @@ func mains(args []string) error {
 			if err != nil {
 				return err
 			}
-			err1 := main1(target, fn, fd)
+			err1 := app.Process(fn, fd)
 			err2 := fd.Close()
 			if err1 != nil || err2 != nil {
 				return fmt.Errorf("%s: %w", fn, errors.Join(err1, err2))
@@ -83,7 +110,11 @@ func mains(args []string) error {
 }
 
 func main() {
-	if err := mains(os.Args[1:]); err != nil {
+	app := new(Application)
+	struct2flag.BindDefault(app)
+	flag.Parse()
+
+	if err := app.Run(flag.Args()); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
