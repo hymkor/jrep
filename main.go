@@ -18,6 +18,7 @@ import (
 type Application struct {
 	ValueOnly bool `flag:"value-only,Output only the value, omitting the key and surrounding syntax."`
 	NoComma   bool `flag:"no-comma,Suppress the trailing comma, if present."`
+	NoNewLine bool `flag:"no-newline,Do not append a newline after each input."`
 
 	target *types.JsonPath
 }
@@ -25,11 +26,13 @@ type Application struct {
 func (app *Application) Process(name string, r io.Reader) error {
 	const OFF = 99999
 	found := false
-	defer func() {
-		if found {
-			fmt.Println()
-		}
-	}()
+	if !app.NoNewLine {
+		defer func() {
+			if found {
+				fmt.Println()
+			}
+		}()
+	}
 
 	br := bufio.NewReader(r)
 	nest := OFF
